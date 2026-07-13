@@ -282,7 +282,7 @@ async function serveStatic(pathname, res) {
     const file = await readFile(filePath);
     res.writeHead(200, {
       "Content-Type":  mimeType(extname(filePath)),
-      "Cache-Control": extname(filePath) === ".html" ? "no-store" : "public, max-age=3600",
+      "Cache-Control": extname(filePath) === ".html" ? "no-store" : extname(filePath) === ".js" ? "no-store" : "public, max-age=3600",
     });
     res.end(file);
   } catch {
