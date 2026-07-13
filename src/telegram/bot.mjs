@@ -125,11 +125,14 @@ export function alertProofVerified(proof) {
 
 /** TxLINE stream connected */
 export function alertConnected() {
+  const appUrl = process.env.APP_URL ?? "https://edgeline-os.onrender.com";
   broadcast(
     `<b>🟢 EdgeLine OS Connected</b>\n` +
     `\n` +
     `Live TxLINE stream active on Solana mainnet.\n` +
     `4 AI agents are now trading World Cup fixtures.\n` +
+    `\n` +
+    `🌐 Open dashboard: <a href="${appUrl}">${appUrl}</a>\n` +
     `\n` +
     `<i>Signals and settlement alerts will appear here.</i>`
   );
@@ -188,9 +191,11 @@ export async function startPolling(engineRef) {
         const text   = (msg.text ?? "").trim().toLowerCase();
 
         if (text === "/start" || text === "/help") {
+          const appUrl = process.env.APP_URL ?? "https://edgeline-os.onrender.com";
           await send(chatId,
             `<b>👋 Welcome to EdgeLine OS Bot</b>\n\n` +
             `I send you live trading alerts from the AI agents.\n\n` +
+            `🌐 Open the dashboard: <a href="${appUrl}">${appUrl}</a>\n\n` +
             `<b>Commands:</b>\n` +
             `/status — System status\n` +
             `/portfolio — Current portfolio\n` +
@@ -199,6 +204,7 @@ export async function startPolling(engineRef) {
             `/signals — Latest signals`
           );
         } else if (text === "/status") {
+          const appUrl = process.env.APP_URL ?? "https://edgeline-os.onrender.com";
           const snap = engineRef?.snapshot?.();
           if (!snap) { await send(chatId, "Engine not ready yet."); continue; }
           const ing = snap.ingestion ?? {};
@@ -209,7 +215,8 @@ export async function startPolling(engineRef) {
             `Mode: <b>${snap.mode}</b>\n` +
             `Stream: ${connected ? "🟢 Connected" : "🔴 Disconnected"}\n` +
             `Tick: ${snap.tick}\n` +
-            `Running: ${snap.running ? "▶ Yes" : "⏸ No"}`
+            `Running: ${snap.running ? "▶ Yes" : "⏸ No"}\n\n` +
+            `🌐 Dashboard: <a href="${appUrl}">${appUrl}</a>`
           );
         } else if (text === "/portfolio") {
           const snap = engineRef?.snapshot?.();
