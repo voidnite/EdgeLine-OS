@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>EdgeLine OS — Autonomous AI Sports Trading</title>
+  <link rel="stylesheet" href="landing.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════ NAV ═══════════════════════════ -->
+<nav class="nav" role="navigation">
+  <div class="nav-brand">
+    <svg viewBox="0 0 44 44" fill="none" width="36" height="36">
+      <polygon points="22,2 40,12 40,32 22,42 4,32 4,12" fill="#0a1a16" stroke="#14b8a6" stroke-width="1.5"/>
+      <rect x="9"  y="28" width="4" height="8"  rx="1.5" fill="#14b8a6" opacity=".55"/>
+      <rect x="15" y="22" width="4" height="14" rx="1.5" fill="#14b8a6" opacity=".75"/>
+      <rect x="21" y="16" width="4" height="20" rx="1.5" fill="#14b8a6"/>
+      <rect x="27" y="20" width="4" height="16" rx="1.5" fill="#f59e0b" opacity=".85"/>
+      <rect x="33" y="25" width="4" height="11" rx="1.5" fill="#f59e0b" opacity=".6"/>
+      <circle cx="35" cy="11" r="3.5" fill="#22c55e"/>
+    </svg>
+    <span>EdgeLine <strong>OS</strong></span>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#auth" class="nav-cta">Launch app</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════ HERO ══════════════════════════ -->
+<section class="hero" role="banner">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-lines"></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="live-dot"></span>
+      Live on Solana Mainnet · Powered by TxLINE Oracle
+    </div>
+
+    <h1 class="hero-title">
+      EdgeLine <span class="accent">OS</span>
+    </h1>
+    <p class="hero-sub">Autonomous AI Sports Trading</p>
+    <p class="hero-desc">
+      Four AI agents analyse every World Cup match in real time — detecting
+      odds movements, finding model edge, making market quotes, and fading
+      overextended positions. Every settled trade is cryptographically proved
+      on Solana. You watch, learn, and win.
+    </p>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <strong>4</strong>
+        <span>AI agents</span>
+      </div>
+      <div class="hero-stat">
+        <strong>Real-time</strong>
+        <span>World Cup data</span>
+      </div>
+      <div class="hero-stat">
+        <strong>On-chain</strong>
+        <span>Solana proofs</span>
+      </div>
+      <div class="hero-stat">
+        <strong>93%</strong>
+        <span>Signal accuracy</span>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <a href="#auth" class="btn-primary" id="heroLogin">Launch trading platform</a>
+      <a href="#features" class="btn-ghost">See how it works ↓</a>
+    </div>
+  </div>
+
+  <!-- Floating mock trade card -->
+  <div class="hero-card glass-card" aria-hidden="true">
+    <div class="card-header">
+      <div class="card-dot green"></div>
+      <span>Model Voyager · BUY signal</span>
+      <span class="card-conf">91%</span>
+    </div>
+    <div class="card-match">France <span>vs</span> Brazil</div>
+    <div class="card-detail">Model 58.3% · Market 51.0% · Edge +7.3pts</div>
+    <div class="card-bar"><span style="width:91%"></span></div>
+    <div class="card-footer">
+      <span>$124 stake · 1.82×</span>
+      <span class="verified-pill">Verified on Solana ✅</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FEATURES ══════════════════════ -->
+<section class="features" id="features">
+  <div class="section-label">What you get</div>
+  <h2>Built for serious traders</h2>
+  <p class="section-sub">Every component is production-grade — real oracle data, real AI reasoning, real on-chain settlement.</p>
+
+  <div class="features-grid">
+    <article class="feature-card glass-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Real-time World Cup data</h3>
+      <p>Live scores, odds, and market movements streamed directly from the TxLINE oracle via Server-Sent Events. Every tick, every goal, every odds shift — your agents see it instantly.</p>
+    </article>
+    <article class="feature-card glass-card">
+      <div class="feature-icon">🤖</div>
+      <h3>4 autonomous AI agents</h3>
+      <p>Sharp Sentinel detects odds steam. Model Voyager finds model vs market edge. Maker Prime quotes bid/ask spreads. Counterflow fades overextended moves. All running simultaneously.</p>
+    </article>
+    <article class="feature-card glass-card">
+      <div class="feature-icon">🔐</div>
+      <h3>On-chain Solana proofs</h3>
+      <p>Every settled trade is verified against a Merkle root anchored on Solana mainnet. Goals, cards, corners — all cryptographically proved before payout is calculated.</p>
+    </article>
+    <article class="feature-card glass-card">
+      <div class="feature-icon">📊</div>
+      <h3>Advanced analytics</h3>
+      <p>Sharpe ratio, strategy leaderboard, equity curve, signal accuracy calibration, win-rate heatmap by competition stage. Every number is real, derived from live trades.</p>
+    </article>
+    <article class="feature-card glass-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Kelly Criterion risk engine</h3>
+      <p>Position sizing, maximum exposure, stop-loss, take-profit, and daily loss limits calculated per agent per signal. No single bet blows your portfolio.</p>
+    </article>
+    <article class="feature-card glass-card">
+      <div class="feature-icon">💼</div>
+      <h3>Full portfolio tracking</h3>
+      <p>Live equity, open PnL, realized PnL, win rate, exposure by agent, settlement history with full audit trail. Your complete trading book in one view.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ HOW IT WORKS ══════════════════ -->
+<section class="how" id="how">
+  <div class="section-label">How it works</div>
+  <h2>From oracle to settlement in seconds</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-body">
+        <h3>TxLINE streams live data</h3>
+        <p>World Cup scores and odds arrive via the TxLINE oracle SSE stream. Every update is authenticated and cryptographically signed.</p>
+      </div>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-body">
+        <h3>AI agents analyse & signal</h3>
+        <p>All four agents evaluate every fixture each tick, generating BUY/SELL/FADE signals with confidence scores and plain-English reasoning.</p>
+      </div>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-body">
+        <h3>Risk engine approves positions</h3>
+        <p>Before any position opens, the risk engine checks Kelly stake size, exposure caps, and daily loss limits. Only approved signals become trades.</p>
+      </div>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-body">
+        <h3>Solana proves the result</h3>
+        <p>At full time, a Merkle proof of the final score is validated on-chain. Settlement calculates payouts only after cryptographic verification.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ AUTH ══════════════════════════ -->
+<section class="auth-section" id="auth">
+  <div class="auth-wrap">
+
+    <!-- Left panel -->
+    <div class="auth-info">
+      <div class="auth-brand">
+        <svg viewBox="0 0 44 44" fill="none" width="48" height="48">
+          <polygon points="22,2 40,12 40,32 22,42 4,32 4,12" fill="#0a1a16" stroke="#14b8a6" stroke-width="1.5"/>
+          <rect x="9"  y="28" width="4" height="8"  rx="1.5" fill="#14b8a6" opacity=".55"/>
+          <rect x="15" y="22" width="4" height="14" rx="1.5" fill="#14b8a6" opacity=".75"/>
+          <rect x="21" y="16" width="4" height="20" rx="1.5" fill="#14b8a6"/>
+          <rect x="27" y="20" width="4" height="16" rx="1.5" fill="#f59e0b" opacity=".85"/>
+          <rect x="33" y="25" width="4" height="11" rx="1.5" fill="#f59e0b" opacity=".6"/>
+          <circle cx="35" cy="11" r="3.5" fill="#22c55e"/>
+        </svg>
+        <div>
+          <h2>EdgeLine <span class="accent">OS</span></h2>
+          <p>Autonomous AI Sports Trading</p>
+        </div>
+      </div>
+      <ul class="auth-features">
+        <li><span class="check">✓</span> Live World Cup matches from TxLINE oracle</li>
+        <li><span class="check">✓</span> 4 AI agents trading autonomously</li>
+        <li><span class="check">✓</span> On-chain settlement via Solana mainnet</li>
+        <li><span class="check">✓</span> Real-time portfolio & analytics</li>
+        <li><span class="check">✓</span> Cryptographic proof on every trade</li>
+      </ul>
+    </div>
+
+    <!-- Right panel — forms -->
+    <div class="auth-forms glass-card">
+      <!-- Tabs -->
+      <div class="form-tabs" role="tablist">
+        <button class="form-tab active" id="loginTab" role="tab" aria-selected="true" aria-controls="loginForm">
+          Sign in
+        </button>
+        <button class="form-tab" id="registerTab" role="tab" aria-selected="false" aria-controls="registerForm">
+          Create account
+        </button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="loginForm" class="auth-form" role="tabpanel" novalidate>
+        <div class="form-group">
+          <label for="loginEmail">Gmail address</label>
+          <input type="email" id="loginEmail" name="email" placeholder="yourname@gmail.com"
+            autocomplete="email" required/>
+          <span class="field-error" id="loginEmailErr"></span>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" name="password" placeholder="6+ characters"
+              autocomplete="current-password" required minlength="6"/>
+            <button type="button" class="eye-btn" aria-label="Toggle password visibility" data-target="loginPassword">👁</button>
+          </div>
+          <span class="field-error" id="loginPasswordErr"></span>
+        </div>
+        <div class="form-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="loginRemember"/> Remember me
+          </label>
+          <button type="button" class="forgot-btn" id="forgotBtn">Forgot password?</button>
+        </div>
+        <div class="form-error glass-error" id="loginError" hidden></div>
+        <button type="submit" class="btn-primary full" id="loginSubmit">
+          <span class="btn-text">Sign in to EdgeLine OS</span>
+          <span class="btn-spinner" hidden>⏳</span>
+        </button>
+        <p class="form-switch">
+          No account? <button type="button" class="link-btn" id="toRegister">Create one free</button>
+        </p>
+      </form>
+
+      <!-- REGISTER -->
+      <form id="registerForm" class="auth-form hidden" role="tabpanel" novalidate>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="regName">Full name</label>
+            <input type="text" id="regName" name="name" placeholder="Jane Smith" required/>
+            <span class="field-error" id="regNameErr"></span>
+          </div>
+          <div class="form-group">
+            <label for="regCountry">Country</label>
+            <select id="regCountry" name="country" required>
+              <option value="">Select country…</option>
+              <option>United States</option><option>United Kingdom</option>
+              <option>Canada</option><option>Australia</option>
+              <option>Germany</option><option>France</option>
+              <option>Nigeria</option><option>South Africa</option>
+              <option>Brazil</option><option>Japan</option>
+              <option>South Korea</option><option>Argentina</option>
+              <option>Spain</option><option>Italy</option>
+              <option>Netherlands</option><option>Portugal</option>
+              <option>Mexico</option><option>Colombia</option>
+              <option>Kenya</option><option>Ghana</option>
+              <option>Other</option>
+            </select>
+            <span class="field-error" id="regCountryErr"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Gmail address</label>
+          <input type="email" id="regEmail" name="email" placeholder="yourname@gmail.com" required/>
+          <span class="field-error" id="regEmailErr"></span>
+        </div>
+        <div class="form-group">
+          <label for="regPhone">Phone number</label>
+          <input type="tel" id="regPhone" name="phone" placeholder="+1 555 000 0000" required/>
+          <span class="field-error" id="regPhoneErr"></span>
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password <span class="hint">(min 6 characters, must include number &amp; symbol)</span></label>
+          <div class="password-wrap">
+            <input type="password" id="regPassword" name="password" placeholder="Create a strong password" required minlength="6"/>
+            <button type="button" class="eye-btn" aria-label="Toggle password" data-target="regPassword">👁</button>
+          </div>
+          <div class="strength-bar"><span id="strengthFill"></span></div>
+          <span class="strength-label" id="strengthLabel"></span>
+          <span class="field-error" id="regPasswordErr"></span>
+        </div>
+        <div class="form-group">
+          <label for="regConfirm">Confirm password</label>
+          <div class="password-wrap">
+            <input type="password" id="regConfirm" name="confirm" placeholder="Repeat your password" required/>
+            <button type="button" class="eye-btn" aria-label="Toggle password" data-target="regConfirm">👁</button>
+          </div>
+          <span class="field-error" id="regConfirmErr"></span>
+        </div>
+        <!-- Verification option -->
+        <div class="form-group">
+          <label class="section-mini">Send verification code via</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="verifyMethod" value="email" checked/> Email</label>
+            <label class="radio-label" title="SMS requires network access to api.twilio.com"><input type="radio" name="verifyMethod" value="sms"/> SMS</label>
+          </div>
+          <small style="color:rgba(226,238,234,.35);font-size:.72rem;">
+            SMS delivery requires Twilio to be reachable from your network.
+            Email is recommended if SMS fails.
+          </small>
+        </div>
+        <div class="form-group" id="verifyCodeGroup" hidden>
+          <label for="regCode">Verification code</label>
+          <div class="code-row">
+            <input type="text" id="regCode" name="code" placeholder="6-digit code" maxlength="6"/>
+            <button type="button" class="btn-secondary" id="sendCodeBtn">Send code</button>
+          </div>
+          <span class="field-error" id="regCodeErr"></span>
+        </div>
+        <div class="form-error glass-error" id="registerError" hidden></div>
+        <button type="submit" class="btn-primary full" id="registerSubmit">
+          <span class="btn-text">Create my account</span>
+          <span class="btn-spinner" hidden>⏳</span>
+        </button>
+        <p class="form-switch">
+          Already have an account? <button type="button" class="link-btn" id="toLogin">Sign in</button>
+        </p>
+      </form>
+
+      <!-- FORGOT PASSWORD -->
+      <form id="forgotForm" class="auth-form hidden" novalidate>
+        <div class="form-back">
+          <button type="button" class="link-btn" id="backToLogin">← Back to sign in</button>
+        </div>
+        <h3 class="form-title">Reset your password</h3>
+        <p class="form-hint">Enter your Gmail and we'll send a reset link.</p>
+        <div class="form-group">
+          <label for="forgotEmail">Gmail address</label>
+          <input type="email" id="forgotEmail" placeholder="yourname@gmail.com" required/>
+          <span class="field-error" id="forgotEmailErr"></span>
+        </div>
+        <div class="form-success glass-success" id="forgotSuccess" hidden></div>
+        <div class="form-error glass-error" id="forgotError" hidden></div>
+        <button type="submit" class="btn-primary full">Send reset link</button>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FOOTER ════════════════════════ -->
+<footer class="footer">
+  <div class="footer-brand">
+    <strong>EdgeLine OS</strong> — Autonomous AI Sports Trading
+  </div>
+  <p>Powered by TxLINE Oracle · Solana Mainnet · World Cup 2026</p>
+  <p class="footer-disclaimer">For demonstration purposes. Trade responsibly.</p>
+</footer>
+
+<script src="landing.js"></script>
+</body>
+</html>

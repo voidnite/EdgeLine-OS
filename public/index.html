@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EdgeLine OS — World Cup Live Trading</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <main class="shell">
+
+    <!-- ═══════════════════════════════════════ TOP BAR ══ -->
+    <header class="topbar" role="banner">
+      <div class="brand">
+        <div class="brand-glyph" aria-hidden="true">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="44" height="44">
+            <!-- Outer hexagon -->
+            <polygon points="22,2 40,12 40,32 22,42 4,32 4,12"
+              fill="#0a1a16" stroke="#14b8a6" stroke-width="1.5"/>
+            <!-- Inner signal bars — rising left to right -->
+            <rect x="9"  y="28" width="4" height="8"  rx="1.5" fill="#14b8a6" opacity="0.55"/>
+            <rect x="15" y="22" width="4" height="14" rx="1.5" fill="#14b8a6" opacity="0.75"/>
+            <rect x="21" y="16" width="4" height="20" rx="1.5" fill="#14b8a6"/>
+            <rect x="27" y="20" width="4" height="16" rx="1.5" fill="#f59e0b" opacity="0.85"/>
+            <rect x="33" y="25" width="4" height="11" rx="1.5" fill="#f59e0b" opacity="0.6"/>
+            <!-- Pulse dot top-right -->
+            <circle cx="35" cy="11" r="3.5" fill="#22c55e"/>
+            <circle cx="35" cy="11" r="6" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>EdgeLine <span class="brand-os">OS</span></h1>
+          <p>Autonomous AI sports trading &nbsp;·&nbsp; World Cup &nbsp;·&nbsp; powered by TxLINE</p>
+        </div>
+      </div>
+
+      <div class="system-strip" role="status" aria-label="System status">
+        <span class="badge" id="modeBadge">loading</span>
+        <span class="badge" id="clockBadge">tick 0</span>
+        <span class="badge conn-badge" id="connBadge">
+          <span class="conn-dot" id="connDot"></span>
+          <span id="connLabel">connecting</span>
+        </span>
+        <span class="badge" id="latencyBadge">— ms</span>
+        <span class="badge health-badge" id="healthBadge">
+          <span id="healthScore">—</span>
+          <span id="healthLabel">health</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- ════════════════════════════════ COMMAND BAND ══ -->
+    <section class="command-band" aria-label="Agent controls">
+      <div class="run-status">
+        <span class="eyebrow">Autonomy</span>
+        <strong id="runState">Connecting…</strong>
+      </div>
+      <button id="startButton">▶ Run agents</button>
+      <button id="pauseButton" class="secondary">⏸ Pause</button>
+      <button id="tickButton" class="secondary">⏭ Step tick</button>
+      <div class="data-source">
+        <span class="eyebrow">Data source</span>
+        <strong id="sourceLabel">—</strong>
+      </div>
+      <div class="receipt-box">
+        <span class="eyebrow">Last receipt</span>
+        <strong id="receiptBadge" class="mono">pending</strong>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ KPI ROW ══ -->
+    <section class="kpi-grid" aria-label="Key performance indicators">
+      <article class="kpi-card">
+        <span class="kpi-label">Signals</span>
+        <strong class="kpi-value" id="signalsKpi">0</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Open positions</span>
+        <strong class="kpi-value" id="positionsKpi">0</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Open PnL</span>
+        <strong class="kpi-value" id="openPnlKpi">$0</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Realized PnL</span>
+        <strong class="kpi-value" id="realizedPnlKpi">$0</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Risk used</span>
+        <strong class="kpi-value" id="riskKpi">$0</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Accuracy</span>
+        <strong class="kpi-value" id="accuracyKpi">—</strong>
+      </article>
+    </section>
+
+    <!-- ═══════════════════════════════════ WORKSPACE ══ -->
+    <div class="workspace">
+
+      <!-- ── LEFT COL ─────────────────────────────────── -->
+      <aside class="left-col">
+
+        <!-- Agent Arena -->
+        <section class="panel agent-panel">
+          <header class="panel-head">
+            <span class="panel-title">Agent arena</span>
+            <span class="panel-badge" id="agentCount">0</span>
+          </header>
+          <div id="agentsList" class="agents-list" role="list"></div>
+        </section>
+
+        <!-- Portfolio Summary -->
+        <section class="panel portfolio-panel">
+          <header class="panel-head">
+            <span class="panel-title">Portfolio</span>
+            <span class="panel-badge roi-badge" id="roiBadge">0.00%</span>
+          </header>
+          <div class="portfolio-grid">
+            <div class="port-stat">
+              <span class="port-label">Balance</span>
+              <strong class="port-value" id="portBalance">$10,000</strong>
+            </div>
+            <div class="port-stat">
+              <span class="port-label">Equity</span>
+              <strong class="port-value" id="portEquity">$10,000</strong>
+            </div>
+            <div class="port-stat">
+              <span class="port-label">Exposure</span>
+              <strong class="port-value" id="portExposure">$0</strong>
+            </div>
+            <div class="port-stat">
+              <span class="port-label">Win rate</span>
+              <strong class="port-value" id="portWinRate">—</strong>
+            </div>
+            <div class="port-stat">
+              <span class="port-label">Trades</span>
+              <strong class="port-value" id="portTrades">0</strong>
+            </div>
+            <div class="port-stat">
+              <span class="port-label">Wins / Losses</span>
+              <strong class="port-value" id="portWL">0 / 0</strong>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+
+      <!-- ── CENTRE COL ────────────────────────────────── -->
+      <section class="centre-col">
+
+        <!-- Signal Radar -->
+        <section class="panel radar-panel">
+          <header class="panel-head radar-head">
+            <span class="panel-title">Signal radar</span>
+            <span class="panel-badge" id="radarState">live</span>
+          </header>
+          <canvas id="radarCanvas" width="900" height="480" aria-label="Live agent signal radar chart"></canvas>
+        </section>
+
+        <!-- AI Reasoning Timeline -->
+        <section class="panel reasoning-panel">
+          <header class="panel-head">
+            <span class="panel-title">AI reasoning timeline</span>
+            <span class="panel-badge" id="decisionCount">0 decisions</span>
+          </header>
+          <div id="decisionLedger" class="decision-ledger" role="log" aria-live="polite"
+            aria-label="AI decision history"></div>
+        </section>
+
+      </section>
+
+      <!-- ── RIGHT COL ─────────────────────────────────── -->
+      <aside class="right-col">
+
+        <!-- World Cup Board -->
+        <section class="panel fixture-panel">
+          <header class="panel-head">
+            <span class="panel-title">Live fixtures</span>
+            <span class="panel-badge" id="fixtureCount">0</span>
+          </header>
+          <div id="fixturesList" class="fixtures-list" role="list"></div>
+        </section>
+
+        <!-- Open Book -->
+        <section class="panel book-panel">
+          <header class="panel-head">
+            <span class="panel-title">Open book</span>
+            <span class="panel-badge" id="bookCount">0</span>
+          </header>
+          <div id="positionsList" class="positions-list" role="list"></div>
+        </section>
+
+        <!-- System Health -->
+        <section class="panel health-panel">
+          <header class="panel-head">
+            <span class="panel-title">System health</span>
+          </header>
+          <div class="health-grid">
+            <div class="health-row">
+              <span class="health-key">Connection</span>
+              <span class="health-val" id="hConn">—</span>
+            </div>
+            <div class="health-row">
+              <span class="health-key">Heartbeat</span>
+              <span class="health-val" id="hHeartbeat">—</span>
+            </div>
+            <div class="health-row">
+              <span class="health-key">Messages</span>
+              <span class="health-val" id="hMessages">0</span>
+            </div>
+            <div class="health-row">
+              <span class="health-key">Reconnects</span>
+              <span class="health-val" id="hReconnects">0</span>
+            </div>
+            <div class="health-row">
+              <span class="health-key">Events/sec</span>
+              <span class="health-val" id="hEps">0</span>
+            </div>
+            <div class="health-row">
+              <span class="health-key">Avg latency</span>
+              <span class="health-val" id="hLatency">— ms</span>
+            </div>
+            <div class="health-row">
+              <span class="health-key">Score events</span>
+              <span class="health-val" id="hScoreEvents">0</span>
+            </div>
+            <div class="health-row">
+              <span class="health-key">Odds events</span>
+              <span class="health-val" id="hOddsEvents">0</span>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+    </div><!-- /workspace -->
+
+    <!-- ═══════════════════════════ LOWER ROW ══ -->
+    <div class="lower-row">
+
+      <!-- ── SETTLEMENT HISTORY ──────────────────── -->
+      <section class="panel settle-panel">
+        <header class="panel-head">
+          <span class="panel-title">Settlement history</span>
+          <span class="panel-badge" id="settleCount">0 settled</span>
+        </header>
+        <div id="settlementList" class="settlement-list" role="list" aria-label="Settled trade history"></div>
+      </section>
+
+      <!-- ── MERKLE PROOF / ON-CHAIN VALIDATION ─── -->
+      <section class="panel proof-panel">
+        <header class="panel-head proof-head">
+          <span class="panel-title">On-chain validation</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span class="panel-badge proof-badge-verified" id="proofVerifiedCount">0 ✅</span>
+            <span class="panel-badge proof-badge-failed" id="proofFailedCount">0 ❌</span>
+          </div>
+        </header>
+        <!-- Summary strip -->
+        <div class="proof-summary-strip">
+          <div class="proof-kpi">
+            <span class="proof-kpi-label">Program</span>
+            <span class="proof-kpi-val mono" id="proofProgram">TxLiNE…</span>
+          </div>
+          <div class="proof-kpi">
+            <span class="proof-kpi-label">Network</span>
+            <span class="proof-kpi-val" id="proofNetwork">devnet</span>
+          </div>
+          <div class="proof-kpi">
+            <span class="proof-kpi-label">Leaves / proof</span>
+            <span class="proof-kpi-val" id="proofLeaves">8</span>
+          </div>
+          <div class="proof-kpi">
+            <span class="proof-kpi-label">Last root</span>
+            <span class="proof-kpi-val mono" id="proofLastRoot">—</span>
+          </div>
+        </div>
+        <div id="proofList" class="proof-list" role="list" aria-label="On-chain proof receipts"></div>
+      </section>
+
+      <!-- ── ANALYTICS ───────────────────────────── -->
+      <section class="panel analytics-panel">
+        <header class="panel-head">
+          <span class="panel-title">Analytics</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span class="panel-badge" id="sharpeLabel">Sharpe —</span>
+            <span class="panel-badge" id="bestStratLabel">—</span>
+          </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="analytics-tabs" role="tablist">
+          <button class="atab atab-active" role="tab" aria-selected="true" data-tab="leaderboard">Leaderboard</button>
+          <button class="atab" role="tab" aria-selected="false" data-tab="accuracy">Accuracy</button>
+          <button class="atab" role="tab" aria-selected="false" data-tab="ev">EV chart</button>
+          <button class="atab" role="tab" aria-selected="false" data-tab="equity">Equity curve</button>
+          <button class="atab" role="tab" aria-selected="false" data-tab="heatmap">Heatmap</button>
+        </div>
+
+        <!-- Tab panes -->
+        <div id="tabLeaderboard" class="atab-pane atab-pane-active">
+          <table class="leaderboard-table" aria-label="Strategy leaderboard">
+            <thead>
+              <tr>
+                <th>Strategy</th>
+                <th>PnL</th>
+                <th>ROI</th>
+                <th>Win%</th>
+                <th>Signals</th>
+                <th>Avg EV</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+
+        <div id="tabAccuracy" class="atab-pane">
+          <div id="accuracyGrid" class="accuracy-grid"></div>
+        </div>
+
+        <div id="tabEv" class="atab-pane">
+          <canvas id="evCanvas" height="200" aria-label="Expected value distribution chart"></canvas>
+        </div>
+
+        <div id="tabEquity" class="atab-pane">
+          <canvas id="equityCanvas" height="200" aria-label="Portfolio equity curve"></canvas>
+        </div>
+
+        <div id="tabHeatmap" class="atab-pane">
+          <div id="heatmapGrid" class="heatmap-wrap"></div>
+        </div>
+
+      </section>
+
+    </div><!-- /lower-row -->
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

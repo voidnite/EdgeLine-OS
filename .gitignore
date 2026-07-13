@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.log
+.DS_Store
+
+# Solana keypair files — NEVER commit these
+*.json.key
+*-keypair.json
+my-wallet.json
+wallet.json
+
+# Cached IDL (fetched at activation time)
+idl/

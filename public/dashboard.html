@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>EdgeLine OS — Trading</title>
+  <link rel="stylesheet" href="dashboard.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════ SIDEBAR ══════════════════════════ -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+  <!-- Brand -->
+  <div class="sb-brand">
+    <svg viewBox="0 0 44 44" fill="none" width="32" height="32">
+      <polygon points="22,2 40,12 40,32 22,42 4,32 4,12" fill="#0a1a16" stroke="#14b8a6" stroke-width="1.5"/>
+      <rect x="9"  y="28" width="4" height="8"  rx="1.5" fill="#14b8a6" opacity=".55"/>
+      <rect x="15" y="22" width="4" height="14" rx="1.5" fill="#14b8a6" opacity=".75"/>
+      <rect x="21" y="16" width="4" height="20" rx="1.5" fill="#14b8a6"/>
+      <rect x="27" y="20" width="4" height="16" rx="1.5" fill="#f59e0b" opacity=".85"/>
+      <rect x="33" y="25" width="4" height="11" rx="1.5" fill="#f59e0b" opacity=".6"/>
+      <circle cx="35" cy="11" r="3.5" fill="#22c55e"/>
+    </svg>
+    <div class="sb-brand-text">
+      <strong>EdgeLine <span>OS</span></strong>
+      <small>AI Sports Trading</small>
+    </div>
+  </div>
+
+  <!-- Connection status pill -->
+  <div class="sb-conn" id="sbConn">
+    <span class="conn-dot" id="sbDot"></span>
+    <span id="sbConnLabel">Connecting…</span>
+  </div>
+
+  <!-- Nav items -->
+  <nav class="sb-nav" aria-label="Screens">
+    <button class="sb-item active" data-screen="trading" aria-selected="true">
+      <span class="sb-icon">📈</span>
+      <span class="sb-label">Trading</span>
+      <span class="sb-badge" id="navSignalsBadge">0</span>
+    </button>
+    <button class="sb-item" data-screen="matches">
+      <span class="sb-icon">⚽</span>
+      <span class="sb-label">Live Matches</span>
+      <span class="sb-badge live-badge" id="navMatchBadge">0</span>
+    </button>
+    <button class="sb-item" data-screen="portfolio">
+      <span class="sb-icon">💼</span>
+      <span class="sb-label">Portfolio</span>
+    </button>
+    <button class="sb-item" data-screen="agents">
+      <span class="sb-icon">🤖</span>
+      <span class="sb-label">Agents</span>
+    </button>
+    <button class="sb-item" data-screen="analytics">
+      <span class="sb-icon">📊</span>
+      <span class="sb-label">Analytics</span>
+    </button>
+    <button class="sb-item" data-screen="validation" id="navValidationBtn">
+      <span class="sb-icon">🔐</span>
+      <span class="sb-label">On-Chain</span>
+      <span class="sb-badge verified-badge" id="navProofBadge">0</span>
+    </button>
+    <button class="sb-item" data-screen="settings">
+      <span class="sb-icon">⚙️</span>
+      <span class="sb-label">Settings</span>
+    </button>
+  </nav>
+
+  <!-- Mini portfolio -->
+  <div class="sb-portfolio">
+    <div class="sb-port-row">
+      <span>Balance</span><strong id="sbBalance">$10,000</strong>
+    </div>
+    <div class="sb-port-row">
+      <span>Open PnL</span><strong id="sbOpenPnl" class="neutral">$0</strong>
+    </div>
+    <div class="sb-port-row">
+      <span>Realized</span><strong id="sbRealPnl" class="neutral">$0</strong>
+    </div>
+  </div>
+
+  <!-- User -->
+  <div class="sb-user" id="sbUser">
+    <div class="sb-avatar" id="sbAvatar">?</div>
+    <div class="sb-user-info">
+      <strong id="sbUserName">—</strong>
+      <small id="sbUserEmail">—</small>
+    </div>
+    <button class="sb-logout" id="logoutBtn" title="Sign out">⏏</button>
+  </div>
+</aside>
+
+<!-- Mobile sidebar toggle -->
+<button class="sb-toggle" id="sbToggle" aria-label="Toggle sidebar">☰</button>
+
+<!-- ═══════════════════════ MAIN ══════════════════════════════ -->
+<main class="main" id="main">
+
+  <!-- ── TOPBAR ── -->
+  <header class="topbar" role="banner">
+    <div class="topbar-left">
+      <h1 class="screen-title" id="screenTitle">Trading</h1>
+      <span class="topbar-sub" id="screenSub">Live World Cup · AI agents running</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge" id="modeBadge">live</span>
+      <span class="badge" id="clockBadge">tick 0</span>
+      <span class="badge health-badge" id="healthBadge">
+        <span id="healthScore">—</span>
+        <span id="healthLabel">health</span>
+      </span>
+    </div>
+  </header>
+
+  <!-- ── KPI BAR (visible on all screens) ── -->
+  <section class="kpi-bar" aria-label="Key performance indicators">
+    <div class="kpi-item">
+      <span class="kpi-label">Signals</span>
+      <strong class="kpi-val" id="signalsKpi">0</strong>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Positions</span>
+      <strong class="kpi-val" id="positionsKpi">0</strong>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Open PnL</span>
+      <strong class="kpi-val" id="openPnlKpi">$0</strong>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Realized</span>
+      <strong class="kpi-val" id="realizedPnlKpi">$0</strong>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Risk used</span>
+      <strong class="kpi-val" id="riskKpi">$0</strong>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Accuracy</span>
+      <strong class="kpi-val" id="accuracyKpi">—</strong>
+    </div>
+    <div class="kpi-controls">
+      <button id="startBtn" class="ctrl-btn primary">▶ Run</button>
+      <button id="pauseBtn" class="ctrl-btn secondary">⏸</button>
+      <button id="tickBtn"  class="ctrl-btn secondary">⏭</button>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: TRADING
+  ══════════════════════════════════════════════════════════════ -->
+  <section class="screen active" id="screen-trading" role="tabpanel">
+
+    <!-- ── Improvement 2: How it works explainer ── -->
+    <div class="explainer-banner" role="note" aria-label="How EdgeLine OS works">
+      <div class="explainer-steps">
+        <div class="explainer-step">
+          <span class="ex-num">01</span>
+          <div>
+            <strong>TxLINE streams live data</strong>
+            <p>Real-time World Cup scores &amp; odds arrive every tick via the TxLINE oracle SSE stream — cryptographically anchored on Solana.</p>
+          </div>
+        </div>
+        <span class="ex-arrow" aria-hidden="true">→</span>
+        <div class="explainer-step">
+          <span class="ex-num">02</span>
+          <div>
+            <strong>4 AI agents analyse &amp; signal</strong>
+            <p>Sharp Sentinel, Model Voyager, Maker Prime and Counterflow each run a different strategy autonomously — no human input required.</p>
+          </div>
+        </div>
+        <span class="ex-arrow" aria-hidden="true">→</span>
+        <div class="explainer-step">
+          <span class="ex-num">03</span>
+          <div>
+            <strong>Risk engine sizes positions</strong>
+            <p>Kelly Criterion stake sizing, exposure caps and daily loss limits protect the portfolio before any position opens.</p>
+          </div>
+        </div>
+        <span class="ex-arrow" aria-hidden="true">→</span>
+        <div class="explainer-step">
+          <span class="ex-num">04</span>
+          <div>
+            <strong>Solana proves every result</strong>
+            <p>At full time a Merkle proof is validated on Solana mainnet. Settlement calculates payouts only after cryptographic verification.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Improvement 1: Live activity feed ── -->
+    <div class="activity-feed-wrap">
+      <div class="activity-feed-head">
+        <span class="activity-title">
+          <span class="activity-pulse" aria-hidden="true"></span>
+          Live agent activity
+        </span>
+        <span class="activity-sub" id="activitySub">Waiting for agents…</span>
+      </div>
+      <div id="activityFeed" class="activity-feed" role="log" aria-live="polite" aria-label="Live agent activity"></div>
+    </div>
+
+    <div class="trading-grid">
+
+      <!-- Signal Radar -->
+      <div class="panel glass-panel radar-wrap">
+        <div class="panel-head">
+          <span class="panel-title">Signal Radar</span>
+          <span class="live-pill" id="radarState">live</span>
+        </div>
+        <canvas id="radarCanvas" aria-label="AI signal radar"></canvas>
+      </div>
+
+      <!-- AI Decisions -->
+      <div class="panel glass-panel decisions-wrap">
+        <div class="panel-head">
+          <span class="panel-title">AI Reasoning</span>
+          <span class="count-badge" id="decisionCount">0</span>
+        </div>
+        <div id="decisionLedger" class="decision-list" role="log" aria-live="polite"></div>
+      </div>
+
+      <!-- Open positions -->
+      <div class="panel light-panel positions-wrap">
+        <div class="panel-head">
+          <span class="panel-title">Open positions</span>
+          <span class="count-badge" id="bookCount">0</span>
+        </div>
+        <div id="positionsList" class="positions-list" role="list"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: LIVE MATCHES
+  ══════════════════════════════════════════════════════════════ -->
+  <section class="screen" id="screen-matches" role="tabpanel">
+    <div class="matches-header">
+      <div class="filter-tabs" id="fixtureFilter">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="Live">Live</button>
+        <button class="filter-btn" data-filter="Scheduled">Upcoming</button>
+        <button class="filter-btn" data-filter="Final">Finished</button>
+      </div>
+      <span class="count-badge" id="fixtureCount">0 matches</span>
+    </div>
+    <div id="fixturesList" class="fixtures-grid" role="list"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: PORTFOLIO
+  ══════════════════════════════════════════════════════════════ -->
+  <section class="screen" id="screen-portfolio" role="tabpanel">
+    <div class="portfolio-layout">
+
+      <!-- Summary cards -->
+      <div class="port-summary">
+        <div class="port-card glass-panel">
+          <span class="port-label">Balance</span>
+          <strong class="port-big" id="portBalance">$10,000</strong>
+        </div>
+        <div class="port-card glass-panel">
+          <span class="port-label">Equity</span>
+          <strong class="port-big positive" id="portEquity">$10,000</strong>
+        </div>
+        <div class="port-card glass-panel">
+          <span class="port-label">ROI</span>
+          <strong class="port-big" id="portRoi">+0.00%</strong>
+        </div>
+        <div class="port-card glass-panel">
+          <span class="port-label">Win rate</span>
+          <strong class="port-big" id="portWinRate">—</strong>
+        </div>
+        <div class="port-card glass-panel">
+          <span class="port-label">Trades</span>
+          <strong class="port-big" id="portTrades">0</strong>
+        </div>
+        <div class="port-card glass-panel">
+          <span class="port-label">W / L</span>
+          <strong class="port-big" id="portWL">0 / 0</strong>
+        </div>
+      </div>
+
+      <!-- Equity chart -->
+      <div class="panel glass-panel equity-panel">
+        <div class="panel-head">
+          <span class="panel-title">Equity curve</span>
+        </div>
+        <canvas id="equityCanvas" aria-label="Portfolio equity curve"></canvas>
+      </div>
+
+      <!-- Settlement history -->
+      <div class="panel light-panel settle-panel">
+        <div class="panel-head">
+          <span class="panel-title">Settlement history</span>
+          <span class="count-badge" id="settleCount">0</span>
+        </div>
+        <div id="settlementList" class="settlement-list" role="list"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: AGENTS
+  ══════════════════════════════════════════════════════════════ -->
+  <section class="screen" id="screen-agents" role="tabpanel">
+    <div id="agentsList" class="agents-grid" role="list"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: ANALYTICS
+  ══════════════════════════════════════════════════════════════ -->
+  <section class="screen" id="screen-analytics" role="tabpanel">
+    <div class="analytics-layout">
+
+      <!-- Sharpe + best -->
+      <div class="analytics-meta">
+        <div class="panel glass-panel metric-card">
+          <span class="metric-label">Sharpe ratio</span>
+          <strong class="metric-big" id="sharpeVal">—</strong>
+          <span class="metric-sub" id="sharpeInterp">Insufficient data</span>
+        </div>
+        <div class="panel glass-panel metric-card">
+          <span class="metric-label">Best strategy</span>
+          <strong class="metric-big" id="bestStrat">—</strong>
+          <span class="metric-sub" id="bestStratPnl">—</span>
+        </div>
+        <div class="panel glass-panel metric-card">
+          <span class="metric-label">Signal accuracy</span>
+          <strong class="metric-big" id="overallAcc">—</strong>
+          <span class="metric-sub">Overall win rate</span>
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="panel light-panel leaderboard-panel">
+        <div class="panel-head">
+          <span class="panel-title">Strategy leaderboard</span>
+        </div>
+        <table class="leaderboard-table" aria-label="Strategy leaderboard">
+          <thead>
+            <tr><th>Strategy</th><th>PnL</th><th>ROI</th><th>Win%</th><th>Signals</th><th>Avg EV</th></tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+
+      <!-- EV chart -->
+      <div class="panel glass-panel ev-panel">
+        <div class="panel-head">
+          <span class="panel-title">Expected value chart</span>
+        </div>
+        <canvas id="evCanvas" aria-label="EV chart"></canvas>
+      </div>
+
+      <!-- Accuracy / calibration -->
+      <div class="panel light-panel accuracy-panel">
+        <div class="panel-head">
+          <span class="panel-title">Signal accuracy per agent</span>
+        </div>
+        <div id="accuracyGrid" class="accuracy-grid"></div>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="panel light-panel heatmap-panel">
+        <div class="panel-head">
+          <span class="panel-title">Win-rate heatmap</span>
+        </div>
+        <div id="heatmapGrid" class="heatmap-wrap"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: ON-CHAIN VALIDATION
+  ══════════════════════════════════════════════════════════════ -->
+  <section class="screen" id="screen-validation" role="tabpanel">
+    <div class="validation-layout">
+
+      <!-- Summary strip -->
+      <div class="proof-strip">
+        <div class="proof-kpi">
+          <span>Program</span>
+          <strong class="mono" id="proofProgram">9ExbZj…KaA</strong>
+        </div>
+        <div class="proof-kpi">
+          <span>Network</span>
+          <strong id="proofNetwork">mainnet</strong>
+        </div>
+        <div class="proof-kpi">
+          <span>Leaves / proof</span>
+          <strong id="proofLeaves">8</strong>
+        </div>
+        <div class="proof-kpi">
+          <span>Verified</span>
+          <strong class="positive" id="proofVerifiedCount">0 ✅</strong>
+        </div>
+        <div class="proof-kpi">
+          <span>Failed</span>
+          <strong class="negative" id="proofFailedCount">0 ❌</strong>
+        </div>
+        <div class="proof-kpi">
+          <span>Last root</span>
+          <strong class="mono" id="proofLastRoot">—</strong>
+        </div>
+      </div>
+
+      <!-- Proof cards -->
+      <div class="panel-head" style="padding:0 0 12px">
+        <span class="panel-title">Merkle proof receipts</span>
+      </div>
+      <div id="proofList" class="proof-list" role="list"></div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: SETTINGS
+  ══════════════════════════════════════════════════════════════ -->
+  <section class="screen" id="screen-settings" role="tabpanel">
+    <div class="settings-layout">
+
+      <div class="panel light-panel settings-card">
+        <div class="panel-head"><span class="panel-title">Account</span></div>
+        <div class="settings-body" id="settingsAccount">
+          <div class="setting-row"><span>Name</span><strong id="setName">—</strong></div>
+          <div class="setting-row"><span>Email</span><strong id="setEmail">—</strong></div>
+          <div class="setting-row"><span>Country</span><strong id="setCountry">—</strong></div>
+        </div>
+      </div>
+
+      <div class="panel light-panel settings-card">
+        <div class="panel-head"><span class="panel-title">System</span></div>
+        <div class="settings-body">
+          <div class="setting-row"><span>Mode</span><strong id="setMode">—</strong></div>
+          <div class="setting-row"><span>Network</span><strong>Solana Mainnet</strong></div>
+          <div class="setting-row"><span>API token</span><strong id="setToken">Loaded ✅</strong></div>
+          <div class="setting-row"><span>Tick speed</span><strong id="setTick">3 s</strong></div>
+        </div>
+      </div>
+
+      <div class="panel light-panel settings-card">
+        <div class="panel-head"><span class="panel-title">System health</span></div>
+        <div class="settings-body">
+          <div class="setting-row"><span>Connection</span><strong id="hConn">—</strong></div>
+          <div class="setting-row"><span>Heartbeat</span><strong id="hHeartbeat">—</strong></div>
+          <div class="setting-row"><span>Events/sec</span><strong id="hEps">—</strong></div>
+          <div class="setting-row"><span>Avg latency</span><strong id="hLatency">—</strong></div>
+          <div class="setting-row"><span>Score events</span><strong id="hScoreEvents">0</strong></div>
+          <div class="setting-row"><span>Reconnects</span><strong id="hReconnects">0</strong></div>
+        </div>
+      </div>
+
+      <div class="settings-danger">
+        <button class="btn-danger" id="settingsLogout">Sign out of EdgeLine OS</button>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

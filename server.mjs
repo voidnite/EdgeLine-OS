@@ -1,0 +1,265 @@
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
+import { AgentEngine } from "./src/engine.mjs";
+import config from "./src/config/config.mjs";
+import { sendVerificationCode, sendWelcomeEmail } from "./src/email/mailer.mjs";
+import { sendSmsCode } from "./src/email/sms.mjs";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const publicDir = join(__dirname, "public");
+
+console.log("=================================");
+console.log("🚀 EdgeLine OS — Trading Platform");
+console.log("=================================");
+console.log(`🌐 Network  : ${config.txline.network}`);
+console.log(`🔑 API Token: ${config.txline.apiToken ? "Loaded ✅" : "Missing ❌"}`);
+console.log(`📡 Mode     : ${config.app.liveMode ? "Live TxLINE" : "Replay"}`);
+console.log(`🌍 URL      : http://localhost:${config.app.port}`);
+console.log("=================================");
+
+const port = config.app.port;
+
+const engine = new AgentEngine({
+  tickMs: config.app.tickMs,
+  live: config.app.liveMode,
+});
+
+const sseClients = new Set();
+// In-memory user store — replace with a database in production
+const userStore  = new Map();
+engine.on("update", (snapshot) => {
+  broadcast("state", snapshot);
+});
+
+engine.start();
+
+const server = createServer(async (req, res) => {
+  try {
+    const url = new URL(req.url || "/", `http://${req.headers.host}`);
+
+    if (req.method === "GET" && url.pathname === "/api/health") {
+      return json(res, {
+        ok: true,
+        name: "EdgeLine OS",
+        mode: engine.mode,
+        tickMs: engine.tickMs,
+      });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/state") {
+      return json(res, engine.snapshot());
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/signals") {
+      return json(res, {
+        signals: engine.signals,
+        positions: engine.positions,
+      });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/settlements") {
+      return json(res, {
+        totalSettled: engine.settlements.length,
+        settlements: engine.settlements,
+      });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/proofs") {
+      return json(res, {
+        proofs: engine.proofReceipts,
+      });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/analytics") {
+      const snap = engine.snapshot();
+      return json(res, snap.analytics ?? {});
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/control") {
+      const body = await readJson(req);
+      if (body.action === "start") engine.start();
+      if (body.action === "pause") engine.pause();
+      if (body.action === "reset") engine.reset();
+      if (body.action === "tick") engine.tick();
+      return json(res, engine.snapshot());
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/stream") {
+      return openSse(req, res);
+    }
+
+    // ── Auth endpoints ──────────────────────────────────────────────────
+    // Simple in-memory user store — sufficient for a hackathon demo.
+    // In production replace with a real database + bcrypt.
+    if (req.method === "POST" && url.pathname === "/api/auth/register") {
+      const body = await readJson(req);
+      const { name, email, password, phone, country } = body;
+
+      if (!email || !password || !name) {
+        return json(res, { error: "Name, email and password are required" }, 400);
+      }
+      if (!email.toLowerCase().endsWith("@gmail.com")) {
+        return json(res, { error: "Must be a Gmail address" }, 400);
+      }
+      if (password.length < 6) {
+        return json(res, { error: "Password must be at least 6 characters" }, 400);
+      }
+      if (userStore.has(email.toLowerCase())) {
+        return json(res, { error: "An account with this email already exists" }, 409);
+      }
+
+      const user = { name, email: email.toLowerCase(), phone: phone ?? "", country: country ?? "" };
+      userStore.set(email.toLowerCase(), { ...user, password });
+      // Send welcome email (non-blocking)
+      sendWelcomeEmail(email, name).catch(() => {});
+      return json(res, { user }, 201);
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/auth/login") {
+      const body = await readJson(req);
+      const { email, password } = body;
+
+      if (!email || !password) {
+        return json(res, { error: "Email and password are required" }, 400);
+      }
+      const record = userStore.get(email.toLowerCase());
+      if (!record || record.password !== password) {
+        return json(res, { error: "Incorrect email or password" }, 401);
+      }
+      const { password: _pw, ...user } = record;
+      return json(res, { user });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/auth/forgot") {
+      // In a real system this would send an email.
+      // For the demo we just confirm the request was received.
+      return json(res, { ok: true, message: "If that email exists a reset link has been sent." });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/auth/send-code") {
+      const body = await readJson(req);
+      const { target, method, code } = body;
+
+      if (!target || !code) {
+        return json(res, { error: "target and code required" }, 400);
+      }
+
+      if (method === "sms") {
+        // ── Real SMS via Twilio ─────────────────────────────────────────
+        const result = await sendSmsCode(target, code);
+        if (result.ok) {
+          console.log(`[Auth] SMS code sent to ${target}`);
+          return json(res, { ok: true, delivered: "sms" });
+        } else if (result.reason === "no_credentials" || result.reason === "no_phone_number") {
+          console.warn(`[Auth] Twilio not configured. SMS code for ${target}: ${code}`);
+          return json(res, { ok: false, reason: "sms_not_configured", code });
+        } else {
+          console.error(`[Auth] SMS failed for ${target}: ${result.reason}`);
+          return json(res, { ok: false, reason: result.reason }, 500);
+        }
+      } else {
+        // ── Real email via Gmail ────────────────────────────────────────
+        const result = await sendVerificationCode(target, code);
+        if (result.ok) {
+          console.log(`[Auth] Email code sent to ${target}`);
+          return json(res, { ok: true, delivered: "email" });
+        } else if (result.reason === "no_credentials") {
+          console.warn(`[Auth] Gmail not configured. Email code for ${target}: ${code}`);
+          return json(res, { ok: false, reason: "no_credentials", code });
+        } else {
+          console.error(`[Auth] Email failed for ${target}: ${result.reason}`);
+          return json(res, { ok: false, reason: result.reason }, 500);
+        }
+      }
+    }
+
+    return serveStatic(url.pathname, res);
+  } catch (error) {
+    return json(res, { error: error.message || "Unexpected error" }, 500);
+  }
+});
+
+server.listen(port, () => {
+  console.log(`EdgeLine OS running at http://localhost:${port}`);
+});
+
+function openSse(req, res) {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  const client = res;
+  sseClients.add(client);
+  writeSse(client, "state", engine.snapshot());
+  req.on("close", () => sseClients.delete(client));
+}
+
+function broadcast(event, data) {
+  for (const client of sseClients) {
+    writeSse(client, event, data);
+  }
+}
+
+function writeSse(res, event, data) {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+async function serveStatic(pathname, res) {
+  // / → landing.html, /dashboard → dashboard.html
+  let safePath = pathname;
+  if (pathname === "/" || pathname === "") safePath = "/landing.html";
+  else if (pathname === "/dashboard")      safePath = "/dashboard.html";
+
+  const normalized = normalize(safePath).replace(/^(\.\.[/\\])+/, "");
+  const filePath   = join(publicDir, normalized);
+  if (!filePath.startsWith(publicDir)) {
+    return json(res, { error: "Invalid path" }, 400);
+  }
+
+  try {
+    const file = await readFile(filePath);
+    res.writeHead(200, {
+      "Content-Type":  mimeType(extname(filePath)),
+      "Cache-Control": extname(filePath) === ".html" ? "no-store" : "public, max-age=3600",
+    });
+    res.end(file);
+  } catch {
+    // Fallback to landing for unknown paths
+    try {
+      const fallback = await readFile(join(publicDir, "landing.html"));
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(fallback);
+    } catch {
+      json(res, { error: "Not found" }, 404);
+    }
+  }
+}
+
+function mimeType(ext) {
+  return {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".svg": "image/svg+xml",
+  }[ext] || "application/octet-stream";
+}
+
+function json(res, data, status = 200) {
+  res.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
+  res.end(JSON.stringify(data, null, 2));
+}
+
+async function readJson(req) {
+  let body = "";
+  for await (const chunk of req) body += chunk;
+  if (!body) return {};
+  return JSON.parse(body);
+}

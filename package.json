@@ -1,0 +1,27 @@
+{
+  "name": "edgeline-os",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Autonomous TxLINE trading tools and agents for the World Cup track.",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "check": "node --check server.mjs && node --check src/engine.mjs && node --check src/strategies.mjs && node --check src/txline-client.mjs && node --check public/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.15",
+    "@solana/web3.js": "^1.98.4",
+    "axios": "^1.18.1",
+    "dotenv": "^17.4.2",
+    "eventsource": "^4.1.0",
+    "jwt-decode": "^4.0.0",
+    "nodemailer": "^9.0.3",
+    "tweetnacl": "^1.0.3",
+    "twilio": "^6.0.2"
+  }
+}
