@@ -6,6 +6,13 @@ import { AgentEngine } from "./src/engine.mjs";
 import config from "./src/config/config.mjs";
 import { sendVerificationCode, sendWelcomeEmail } from "./src/email/mailer.mjs";
 import { connectDB, isConnected, User, Settlement, Proof } from "./src/db/mongoose.mjs";
+import {
+  startPolling,
+  alertSignal,
+  alertSettlement,
+  alertProofVerified,
+  alertDailySummary,
+} from "./src/telegram/bot.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
@@ -75,6 +82,55 @@ engine.on("update", async (snapshot) => {
 });
 
 engine.start();
+
+// ── Telegram bot ─────────────────────────────────────────────────────────
+// Wait 5 seconds after startup before sending the connected alert
+// so the TxLINE stream is already active when the message fires
+setTimeout(() => {
+  startPolling(engine).catch(() => {});
+}, 5000);
+
+// Alert on new top signal each tick
+let _lastSignalId = "";
+engine.on("update", (snapshot) => {
+  const top = snapshot.signals?.[0];
+  if (top && top.id !== _lastSignalId) {
+    _lastSignalId = top.id;
+    alertSignal(top);
+  }
+});
+
+// Alert when a match settles
+let _lastSettleTgId = "";
+engine.on("update", (snapshot) => {
+  const latest = snapshot.settlements?.[0];
+  if (latest && String(latest.fixtureId) !== _lastSettleTgId) {
+    _lastSettleTgId = String(latest.fixtureId);
+    alertSettlement(latest);
+  }
+});
+
+// Alert when Solana proof is verified
+let _lastProofTgSig = "";
+engine.on("update", (snapshot) => {
+  const latest = snapshot.proofs?.[0];
+  if (latest && latest.allVerified && latest.solanaSignature !== _lastProofTgSig) {
+    _lastProofTgSig = latest.solanaSignature;
+    alertProofVerified(latest);
+  }
+});
+
+// Daily summary at midnight UTC
+const _now = new Date();
+const _msToMidnight = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() + 1).getTime() - _now.getTime();
+setTimeout(() => {
+  const s = engine.snapshot();
+  alertDailySummary(s.kpis ?? {}, s.agents ?? []);
+  setInterval(() => {
+    const s2 = engine.snapshot();
+    alertDailySummary(s2.kpis ?? {}, s2.agents ?? []);
+  }, 24 * 60 * 60 * 1000);
+}, _msToMidnight);
 
 const server = createServer(async (req, res) => {
   try {

@@ -104,19 +104,6 @@ registerForm.addEventListener("submit", async (e) => {
   if (password !== confirm){ setErr("regConfirmErr",  "Passwords do not match");        valid = false; }
   if (!valid) return;
 
-  // Check verification code if one was requested
-  const codeInput = document.getElementById("regCode");
-  const codeGroup = document.getElementById("verifyCodeGroup");
-  if (codeGroup && !codeGroup.hidden && codeInput?.value.trim()) {
-    const enteredCode = codeInput.value.trim();
-    const expected    = getVerifyCode(email) ?? getVerifyCode(phone);
-    if (expected && enteredCode !== expected) {
-      setErr("regCodeErr", "Incorrect verification code");
-      valid = false;
-    }
-  }
-  if (!valid) return;
-
   setLoading("registerSubmit", true);
 
   try {
@@ -212,73 +199,6 @@ function setLoading(btnId, loading) {
   btn.disabled = loading;
   btn.querySelector(".btn-text").hidden  = loading;
   btn.querySelector(".btn-spinner").hidden = !loading;
-}
-
-// ── Send verification code (email only) ───────────────────────────────────
-const _pendingCodes = {};
-
-document.getElementById("sendCodeBtn")?.addEventListener("click", async () => {
-  const email   = document.getElementById("regEmail")?.value.trim();
-  const codeErr = document.getElementById("regCodeErr");
-
-  if (!email || !isGmail(email)) {
-    if (codeErr) codeErr.textContent = "Enter your Gmail address first.";
-    return;
-  }
-
-  // Generate code client-side — this is the source of truth
-  const code    = String(Math.floor(100000 + Math.random() * 900000));
-  const expires = Date.now() + 10 * 60 * 1000;
-  _pendingCodes[email] = { code, expires };
-  if (codeErr) codeErr.textContent = "";
-
-  const btn = document.getElementById("sendCodeBtn");
-  if (btn) { btn.textContent = "Sending…"; btn.disabled = true; }
-
-  // ALWAYS show the code in the box first — before the server call
-  // This guarantees the user can always register even if email fails
-  document.getElementById("codeDemoBox")?.remove();
-  const box = document.createElement("div");
-  box.id        = "codeDemoBox";
-  box.className = "glass-success";
-  box.style.marginTop = "6px";
-  box.innerHTML = `Your verification code is:
-    <strong style="font-size:1.4rem;letter-spacing:.18em;display:block;margin:8px 0;color:#14b8a6;">${code}</strong>
-    <small style="opacity:.7">Also sending to ${email} · Expires in 10 min</small>`;
-
-  // Append after the code input row
-  const codeRow = document.getElementById("regCode")?.closest(".code-row");
-  if (codeRow) codeRow.after(box);
-
-  // Then try to also send by email in the background (non-blocking)
-  fetch("/api/auth/send-code", {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ target: email, method: "email", code }),
-  }).then(async (resp) => {
-    const data = await resp.json().catch(() => ({}));
-    if (data.ok) {
-      // Email sent — update box to confirm
-      box.innerHTML = `✅ Code sent to <strong>${email}</strong>
-        <strong style="font-size:1.4rem;letter-spacing:.18em;display:block;margin:8px 0;color:#14b8a6;">${code}</strong>
-        <small style="opacity:.7">Check your inbox and spam · Expires in 10 min</small>`;
-    }
-    // If email fails, box already shows the code — no change needed
-  }).catch(() => {
-    // Network error — box already shows the code, nothing to do
-  }).finally(() => {
-    if (btn) {
-      btn.textContent = "Code sent ✅";
-      setTimeout(() => { btn.textContent = "Resend code"; btn.disabled = false; }, 30000);
-    }
-  });
-});
-
-function getVerifyCode(emailOrPhone) {
-  const rec = _pendingCodes[emailOrPhone];
-  if (!rec) return null;
-  if (Date.now() > rec.expires) { delete _pendingCodes[emailOrPhone]; return null; }
-  return rec.code;
 }
 
 // ── Restore session from localStorage (remember me) ───────────────────────
