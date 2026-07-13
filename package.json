@@ -17,9 +17,12 @@
     "@solana/spl-token": "^0.4.15",
     "@solana/web3.js": "^1.98.4",
     "axios": "^1.18.1",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "eventsource": "^4.1.0",
+    "googleapis": "^173.0.0",
     "jwt-decode": "^4.0.0",
+    "mongoose": "^9.7.4",
     "nodemailer": "^9.0.3",
     "tweetnacl": "^1.0.3",
     "twilio": "^6.0.2"

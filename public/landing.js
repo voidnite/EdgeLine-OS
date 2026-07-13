@@ -214,118 +214,72 @@ function setLoading(btnId, loading) {
   btn.querySelector(".btn-spinner").hidden = !loading;
 }
 
-// ── Send verification code ────────────────────────────────────────────────
-// Since we don't have a real SMS/email gateway in the demo, we generate
-// a 6-digit code and display it right on screen (like a dev preview).
-// In production replace this with an actual email/SMS API call.
-
-const _pendingCodes = {}; // email → { code, expires }
+// ── Send verification code (email only) ───────────────────────────────────
+const _pendingCodes = {};
 
 document.getElementById("sendCodeBtn")?.addEventListener("click", async () => {
-  const email  = document.getElementById("regEmail")?.value.trim();
-  const phone  = document.getElementById("regPhone")?.value.trim();
-  const method = document.querySelector('input[name="verifyMethod"]:checked')?.value ?? "email";
-  const codeErr= document.getElementById("regCodeErr");
-  const codeGroup = document.getElementById("verifyCodeGroup");
+  const email   = document.getElementById("regEmail")?.value.trim();
+  const codeErr = document.getElementById("regCodeErr");
 
-  if (!email && !phone) {
-    if (codeErr) codeErr.textContent = "Enter your email and phone first.";
+  if (!email || !isGmail(email)) {
+    if (codeErr) codeErr.textContent = "Enter your Gmail address first.";
     return;
   }
 
-  // Generate 6-digit code
   const code    = String(Math.floor(100000 + Math.random() * 900000));
-  const expires = Date.now() + 10 * 60 * 1000; // 10 min
-  const target  = method === "sms" ? phone : email;
-  _pendingCodes[email ?? phone] = { code, expires };
-
-  // Show the code group if hidden
-  if (codeGroup) codeGroup.hidden = false;
+  const expires = Date.now() + 10 * 60 * 1000;
+  _pendingCodes[email] = { code, expires };
   if (codeErr) codeErr.textContent = "";
 
-  // Update button state
   const btn = document.getElementById("sendCodeBtn");
-  if (btn) {
-    btn.textContent = "Sending…";
-    btn.disabled    = true;
-  }
+  if (btn) { btn.textContent = "Sending…"; btn.disabled = true; }
 
-  // POST to server — server sends real email or returns code if not configured
   try {
     const resp = await fetch("/api/auth/send-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target, method, code }),
+      body: JSON.stringify({ target: email, method: "email", code }),
     });
     const data = await resp.json();
 
-    // Remove any previous box
     document.getElementById("codeDemoBox")?.remove();
     const box = document.createElement("div");
     box.id = "codeDemoBox";
     box.style.marginTop = "6px";
 
     if (data.ok) {
-      // Real message sent (email or SMS)
-      const channel = data.delivered === "sms" ? "SMS" : "email";
-      const hint    = data.delivered === "sms"
-        ? "Check your text messages"
-        : "Check your inbox (and spam folder)";
       box.className = "glass-success";
-      box.innerHTML = `✅ Verification code sent via <strong>${channel}</strong> to <strong>${target}</strong>.
-        <br><small>${hint} · Expires in 10 min</small>`;
-    } else if (data.reason === "no_credentials" || data.reason === "sms_not_configured") {
-      // Twilio/Gmail not yet configured — still show code so user isn't blocked
-      // Store the server-returned code so validation works
-      _pendingCodes[email ?? phone] = { code: data.code ?? code, expires: Date.now() + 10 * 60 * 1000 };
-      box.className = "glass-success";
-      box.innerHTML = `Your verification code is
-        <strong style="font-size:1.1rem;letter-spacing:.12em">${data.code ?? code}</strong>
-        <br><small>Email not configured — showing code here · Expires in 10 min</small>`;
+      box.innerHTML = `✅ Verification code sent to <strong>${email}</strong>.<br>
+        <small>Check your inbox and spam folder · Expires in 10 min</small>`;
     } else {
-      box.className = "glass-error";
-      const isNetwork = data.reason?.includes("ENOTFOUND") || data.reason?.includes("network") || data.reason?.includes("fetch");
-      if (isNetwork && method === "sms") {
-        box.className = "glass-success";
-        // Auto-fallback: send via email instead
-        box.innerHTML = `⚠️ SMS network unreachable. Sending via <strong>email</strong> to <strong>${email}</strong> instead.
-          <br><small>Check your inbox · Expires in 10 min</small>`;
-        // Actually send by email
-        fetch("/api/auth/send-code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target: email, method: "email", code }),
-        }).catch(() => {});
-      } else {
-        box.innerHTML = `Could not send code: ${data.reason ?? "Unknown error"}. Try again.`;
-      }
+      // Server couldn't send — show code on screen so user isn't blocked
+      _pendingCodes[email] = { code: data.code ?? code, expires };
+      box.className = "glass-success";
+      box.innerHTML = `Your verification code is:
+        <strong style="font-size:1.2rem;letter-spacing:.15em;display:block;margin:6px 0">${data.code ?? code}</strong>
+        <small>Expires in 10 min</small>`;
     }
 
     document.getElementById("regCode")?.closest(".code-row")?.after(box);
   } catch {
-    // Network error fallback
+    // Complete fallback — show code on screen
+    document.getElementById("codeDemoBox")?.remove();
     const box = document.createElement("div");
+    box.id = "codeDemoBox";
     box.className = "glass-success";
     box.style.marginTop = "6px";
-    box.innerHTML = `Your verification code is
-      <strong style="font-size:1.1rem;letter-spacing:.12em">${code}</strong>
-      <br><small>Expires in 10 min</small>`;
-    document.getElementById("codeDemoBox")?.remove();
-    box.id = "codeDemoBox";
+    box.innerHTML = `Your verification code is:
+      <strong style="font-size:1.2rem;letter-spacing:.15em;display:block;margin:6px 0">${code}</strong>
+      <small>Expires in 10 min</small>`;
     document.getElementById("regCode")?.closest(".code-row")?.after(box);
   } finally {
-    // Re-enable button after 30s
     if (btn) {
       btn.textContent = "Code sent ✅";
-      setTimeout(() => {
-        btn.textContent = "Resend code";
-        btn.disabled    = false;
-      }, 30000);
+      setTimeout(() => { btn.textContent = "Resend code"; btn.disabled = false; }, 30000);
     }
   }
 });
 
-// Expose pending codes for register form validation
 function getVerifyCode(emailOrPhone) {
   const rec = _pendingCodes[emailOrPhone];
   if (!rec) return null;
@@ -333,19 +287,11 @@ function getVerifyCode(emailOrPhone) {
   return rec.code;
 }
 
-// ── Show/hide verify code group based on radio selection ─────────────────
-document.querySelectorAll('input[name="verifyMethod"]').forEach(radio => {
-  radio.addEventListener("change", () => {
-    const grp = document.getElementById("verifyCodeGroup");
-    if (grp) grp.hidden = false;
-  });
-});
-
 // ── Restore session from localStorage (remember me) ───────────────────────
 const stored = localStorage.getItem("el_user");
 if (stored) {
   try {
-    JSON.parse(stored); // validate it's real JSON before redirecting
+    JSON.parse(stored);
     sessionStorage.setItem("el_user", stored);
     window.location.href = "/dashboard.html";
   } catch {

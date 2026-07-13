@@ -19,6 +19,8 @@ services:
       # (never commit real values to git)
       - key: TXLINE_API_TOKEN
         sync: false
+      - key: MONGODB_URI
+        sync: false
       - key: GMAIL_USER
         sync: false
       - key: GMAIL_APP_PASSWORD

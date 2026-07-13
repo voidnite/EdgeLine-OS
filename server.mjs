@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { AgentEngine } from "./src/engine.mjs";
 import config from "./src/config/config.mjs";
 import { sendVerificationCode, sendWelcomeEmail } from "./src/email/mailer.mjs";
-import { sendSmsCode } from "./src/email/sms.mjs";
+import { connectDB, isConnected, User, Settlement, Proof } from "./src/db/mongoose.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
@@ -27,10 +27,51 @@ const engine = new AgentEngine({
 });
 
 const sseClients = new Set();
-// In-memory user store — replace with a database in production
+// In-memory fallback store — used when MongoDB is not configured
 const userStore  = new Map();
+
+// Connect to MongoDB Atlas (non-blocking — falls back to in-memory if not configured)
+connectDB().catch(() => {});
+
 engine.on("update", (snapshot) => {
   broadcast("state", snapshot);
+});
+
+// Persist new settlements and proofs to MongoDB whenever the engine emits them
+let _lastSettleCount = 0;
+let _lastProofCount  = 0;
+engine.on("update", async (snapshot) => {
+  if (!isConnected()) return;
+
+  // Persist new settlements
+  if (snapshot.settlements?.length > _lastSettleCount) {
+    const newOnes = snapshot.settlements.slice(0, snapshot.settlements.length - _lastSettleCount);
+    for (const s of newOnes) {
+      try {
+        await Settlement.findOneAndUpdate(
+          { fixtureId: String(s.fixtureId) },
+          { ...s, fixtureId: String(s.fixtureId) },
+          { upsert: true, new: true }
+        );
+      } catch { /* non-critical */ }
+    }
+    _lastSettleCount = snapshot.settlements.length;
+  }
+
+  // Persist new proofs
+  if (snapshot.proofs?.length > _lastProofCount) {
+    const newOnes = snapshot.proofs.slice(0, snapshot.proofs.length - _lastProofCount);
+    for (const p of newOnes) {
+      try {
+        await Proof.findOneAndUpdate(
+          { fixtureId: String(p.fixtureId), solanaSignature: p.solanaSignature },
+          { ...p, fixtureId: String(p.fixtureId) },
+          { upsert: true, new: true }
+        );
+      } catch { /* non-critical */ }
+    }
+    _lastProofCount = snapshot.proofs.length;
+  }
 });
 
 engine.start();
@@ -106,15 +147,36 @@ const server = createServer(async (req, res) => {
       if (password.length < 6) {
         return json(res, { error: "Password must be at least 6 characters" }, 400);
       }
-      if (userStore.has(email.toLowerCase())) {
-        return json(res, { error: "An account with this email already exists" }, 409);
-      }
 
-      const user = { name, email: email.toLowerCase(), phone: phone ?? "", country: country ?? "" };
-      userStore.set(email.toLowerCase(), { ...user, password });
-      // Send welcome email (non-blocking)
-      sendWelcomeEmail(email, name).catch(() => {});
-      return json(res, { user }, 201);
+      const emailLower = email.toLowerCase();
+
+      if (isConnected()) {
+        // ── MongoDB path ────────────────────────────────────────────────
+        try {
+          const existing = await User.findOne({ email: emailLower });
+          if (existing) {
+            return json(res, { error: "An account with this email already exists" }, 409);
+          }
+          const doc = await User.create({ name, email: emailLower, password, phone: phone ?? "", country: country ?? "" });
+          const user = { name: doc.name, email: doc.email, phone: doc.phone, country: doc.country };
+          sendWelcomeEmail(email, name).catch(() => {});
+          return json(res, { user }, 201);
+        } catch (err) {
+          if (err.code === 11000) {
+            return json(res, { error: "An account with this email already exists" }, 409);
+          }
+          throw err;
+        }
+      } else {
+        // ── In-memory fallback ──────────────────────────────────────────
+        if (userStore.has(emailLower)) {
+          return json(res, { error: "An account with this email already exists" }, 409);
+        }
+        const user = { name, email: emailLower, phone: phone ?? "", country: country ?? "" };
+        userStore.set(emailLower, { ...user, password });
+        sendWelcomeEmail(email, name).catch(() => {});
+        return json(res, { user }, 201);
+      }
     }
 
     if (req.method === "POST" && url.pathname === "/api/auth/login") {
@@ -124,12 +186,30 @@ const server = createServer(async (req, res) => {
       if (!email || !password) {
         return json(res, { error: "Email and password are required" }, 400);
       }
-      const record = userStore.get(email.toLowerCase());
-      if (!record || record.password !== password) {
-        return json(res, { error: "Incorrect email or password" }, 401);
+
+      const emailLower = email.toLowerCase();
+
+      if (isConnected()) {
+        // ── MongoDB path ────────────────────────────────────────────────
+        const doc = await User.findOne({ email: emailLower });
+        if (!doc) {
+          return json(res, { error: "Incorrect email or password" }, 401);
+        }
+        const valid = await doc.verifyPassword(password);
+        if (!valid) {
+          return json(res, { error: "Incorrect email or password" }, 401);
+        }
+        const user = { name: doc.name, email: doc.email, phone: doc.phone, country: doc.country };
+        return json(res, { user });
+      } else {
+        // ── In-memory fallback ──────────────────────────────────────────
+        const record = userStore.get(emailLower);
+        if (!record || record.password !== password) {
+          return json(res, { error: "Incorrect email or password" }, 401);
+        }
+        const { password: _pw, ...user } = record;
+        return json(res, { user });
       }
-      const { password: _pw, ...user } = record;
-      return json(res, { user });
     }
 
     if (req.method === "POST" && url.pathname === "/api/auth/forgot") {
@@ -140,38 +220,16 @@ const server = createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/auth/send-code") {
       const body = await readJson(req);
-      const { target, method, code } = body;
+      const { target, code } = body;
+      if (!target || !code) return json(res, { error: "target and code required" }, 400);
 
-      if (!target || !code) {
-        return json(res, { error: "target and code required" }, 400);
-      }
-
-      if (method === "sms") {
-        // ── Real SMS via Twilio ─────────────────────────────────────────
-        const result = await sendSmsCode(target, code);
-        if (result.ok) {
-          console.log(`[Auth] SMS code sent to ${target}`);
-          return json(res, { ok: true, delivered: "sms" });
-        } else if (result.reason === "no_credentials" || result.reason === "no_phone_number") {
-          console.warn(`[Auth] Twilio not configured. SMS code for ${target}: ${code}`);
-          return json(res, { ok: false, reason: "sms_not_configured", code });
-        } else {
-          console.error(`[Auth] SMS failed for ${target}: ${result.reason}`);
-          return json(res, { ok: false, reason: result.reason }, 500);
-        }
+      const result = await sendVerificationCode(target, code);
+      if (result.ok) {
+        return json(res, { ok: true, delivered: "email" });
       } else {
-        // ── Real email via Gmail ────────────────────────────────────────
-        const result = await sendVerificationCode(target, code);
-        if (result.ok) {
-          console.log(`[Auth] Email code sent to ${target}`);
-          return json(res, { ok: true, delivered: "email" });
-        } else if (result.reason === "no_credentials") {
-          console.warn(`[Auth] Gmail not configured. Email code for ${target}: ${code}`);
-          return json(res, { ok: false, reason: "no_credentials", code });
-        } else {
-          console.error(`[Auth] Email failed for ${target}: ${result.reason}`);
-          return json(res, { ok: false, reason: result.reason }, 500);
-        }
+        // Return code so client can show it as fallback
+        console.warn(`[Auth] Email failed (${result.reason}) — returning code for client display`);
+        return json(res, { ok: false, reason: result.reason, code });
       }
     }
 

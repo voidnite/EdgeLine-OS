@@ -307,19 +307,14 @@
           </div>
           <span class="field-error" id="regConfirmErr"></span>
         </div>
-        <!-- Verification option -->
+        <!-- Email verification only -->
         <div class="form-group">
-          <label class="section-mini">Send verification code via</label>
-          <div class="radio-group">
-            <label class="radio-label"><input type="radio" name="verifyMethod" value="email" checked/> Email</label>
-            <label class="radio-label" title="SMS requires network access to api.twilio.com"><input type="radio" name="verifyMethod" value="sms"/> SMS</label>
-          </div>
-          <small style="color:rgba(226,238,234,.35);font-size:.72rem;">
-            SMS delivery requires Twilio to be reachable from your network.
-            Email is recommended if SMS fails.
-          </small>
+          <label class="section-mini">Verify your email</label>
+          <p style="font-size:0.78rem;color:rgba(226,238,234,.5);margin:4px 0 0;">
+            A 6-digit code will be sent to your Gmail address.
+          </p>
         </div>
-        <div class="form-group" id="verifyCodeGroup" hidden>
+        <div class="form-group" id="verifyCodeGroup">
           <label for="regCode">Verification code</label>
           <div class="code-row">
             <input type="text" id="regCode" name="code" placeholder="6-digit code" maxlength="6"/>
