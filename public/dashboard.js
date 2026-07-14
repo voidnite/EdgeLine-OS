@@ -188,8 +188,9 @@ function renderTopBar(d) {
   const isLive    = d.mode === "live-txline";
   const connected = isLive ? Boolean(ing.connected) : Boolean(d.running);
   const connSt    = connected ? "connected" : (d.running ? "reconnecting" : "disconnected");
-  const connLbl   = connected ? (isLive ? "TxLINE live" : "Replay running")
-                  : (d.running ? "Reconnecting…" : "Paused");
+  const connLbl   = d.mode === "live-txline"
+    ? (connected ? "TxLINE live" : (d.running ? "Live · connecting…" : "Paused"))
+    : (connected ? "Replay running" : (d.running ? "Replay running" : "Paused"));
   setConnUI(connSt, connLbl);
 
   const score = computeHealth(d);
