@@ -16,6 +16,7 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // refresh every 5 min
 // return 0-0 (score data uses stat-key encoding, not simple score fields).
 // Sources: ESPN, Al Jazeera, Fox Sports, WorldSoccerTalk — verified July 12, 2026.
 const CONFIRMED_RESULTS = {
+  "18237038": { homeScore: 2, awayScore: 0, minute: 90,  stage: "Semi-finals" }, // Spain 2-0 France
   // ── Quarter-finals (all finished) ────────────────────────────────────────
   "18209181": { homeScore: 2, awayScore: 0, minute: 90,  stage: "Quarter-finals" }, // France 2-0 Morocco
   "18209182": { homeScore: 3, awayScore: 1, minute: 90,  stage: "Quarter-finals" }, // Spain 3-1 Portugal
@@ -102,8 +103,10 @@ class FixturesLoader {
       // 2. Deduplicate by fixture ID AND by home+away team combination
       // We keep ALL fixtures from the API and only skip obvious non-football junk.
       // Log what we receive so we can see exactly what TxLINE is returning.
-      const SKIP_TEAMS  = new Set(["Vietnam","Myanmar","Vietnam U23","Myanmar U23"]);
-      const SKIP_IDS    = new Set(["18182808", "18182864"]); // Australia vs Brazil — not a 2026 WC match
+      const SKIP_TEAMS  = new Set(["Vietnam","Myanmar","Vietnam U23","Myanmar U23",
+                                    "New Zealand","India","New Zealand U23","India U23"]);
+      const SKIP_IDS    = new Set(["18182808", "18182864", // Australia vs Brazil
+                                    "18242838", "18242839"]); // New Zealand vs India
 
       const seen     = new Set();
       const teamSeen = new Set();
@@ -207,9 +210,16 @@ class FixturesLoader {
       // expose in the fixture snapshot (API only returns ~6 fixtures at a time).
       const STATIC_CONFIRMED = [
         {
+          id: 18237038, home: "Spain", away: "France",
+          stage: "Semi-finals", minute: 90, status: "Final",
+          homeScore: 2, awayScore: 0, // Spain 2-0 France
+          outcomes: ["Spain", "Draw", "France"],
+          startTime: "2026-07-14T20:00:00Z",
+        },
+        {
           id: 18209183, home: "Norway", away: "England",
           stage: "Quarter-finals", minute: 120, status: "Final",
-          homeScore: 1, awayScore: 2, // England won 2-1 AET
+          homeScore: 1, awayScore: 2,
           outcomes: ["Norway", "Draw", "England"],
           startTime: "2026-07-11T20:00:00Z",
         },

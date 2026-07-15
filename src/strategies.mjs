@@ -66,24 +66,40 @@ export const AGENT_BLUEPRINTS = [
 
 export function evaluateStrategies({ fixtures, history, agents, tick }) {
   const signals = [];
-  for (const fixture of fixtures) {
-    // Skip Final fixtures entirely — nothing to trade
-    if (fixture.status === "Final") continue;
 
+  for (const fixture of fixtures) {
+    if (fixture.status === "Final") continue;
     const marketHistory = history.get(fixture.id) || [];
-    // Need at least 2 history points; for Scheduled fixtures we allow 1
     if (marketHistory.length < 2) continue;
 
-    signals.push(...sharpMovementSignals(fixture, marketHistory, agents, tick));
-    signals.push(...modelEdgeSignals(fixture, marketHistory, agents, tick));
-    signals.push(...marketMakerQuotes(fixture, marketHistory, agents, tick));
-    signals.push(...counterflowSignals(fixture, marketHistory, agents, tick));
+    // Collect signals from all 4 agents per fixture
+    const sharp  = sharpMovementSignals(fixture, marketHistory, agents, tick);
+    const voyager= modelEdgeSignals(fixture, marketHistory, agents, tick);
+    const maker  = marketMakerQuotes(fixture, marketHistory, agents, tick);
+    const counter= counterflowSignals(fixture, marketHistory, agents, tick);
+
+    signals.push(...sharp, ...voyager, ...maker, ...counter);
   }
 
-  return signals
-    .filter(Boolean)
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 12);
+  // Sort by confidence but ensure each agent gets at least one slot
+  // to guarantee all 4 colors appear in the radar and activity feed
+  const sorted = signals.filter(Boolean).sort((a, b) => b.confidence - a.confidence);
+
+  const guaranteed = new Map(); // agentId → best signal
+  for (const sig of sorted) {
+    if (!guaranteed.has(sig.agentId)) guaranteed.set(sig.agentId, sig);
+    if (guaranteed.size === 4) break;
+  }
+
+  // Start with one guaranteed signal per agent, fill rest by confidence
+  const result  = [...guaranteed.values()];
+  const usedIds = new Set(result.map(s => s.id));
+  for (const sig of sorted) {
+    if (result.length >= 16) break;
+    if (!usedIds.has(sig.id)) { result.push(sig); usedIds.add(sig.id); }
+  }
+
+  return result.slice(0, 16);
 }
 
 // ── Sharp Sentinel ────────────────────────────────────────────────────────
@@ -114,12 +130,12 @@ function sharpMovementSignals(fixture, history, agents, tick) {
   // Pre-match: ELO divergence from market with tick-based noise
   const elo    = eloProbs(fixture.home, fixture.away);
   const market = latest.probabilities;
-  const noise  = pseudoNoise(tick * 7 + (fixture.id % 100), tick, 0.016);
+  const noise  = pseudoNoise(tick * 7 + (fixture.id % 100), tick, 0.022);
 
   return fixture.outcomes.map((outcome, index) => {
     const divergence = elo[index] - market[index] + noise;
-    if (Math.abs(divergence) < 0.012) return null;
-    const confidence = clamp(Math.abs(divergence) * 6.5 + 0.38, 0.38, 0.84);
+    if (Math.abs(divergence) < 0.008) return null;
+    const confidence = clamp(Math.abs(divergence) * 7 + 0.42, 0.42, 0.88);
     return buildSignal({
       tick, fixture, agent,
       type: "pre-match-move", outcome,
@@ -146,8 +162,8 @@ function modelEdgeSignals(fixture, history, agents, tick) {
     const modelProb  = clamp(elo[index] + perturb, 0.03, 0.94);
     const marketProb = market[index];
     const edge       = modelProb - marketProb;
-    const confidence = clamp(Math.abs(edge) * 5.2 + (fixture.volatility ?? 0.04) * 1.8, 0, 0.93);
-    if (Math.abs(edge) < 0.010 || confidence < 0.28) return null;
+    const confidence = clamp(Math.abs(edge) * 6.0 + (fixture.volatility ?? 0.04) * 2.0, 0, 0.93);
+    if (Math.abs(edge) < 0.008 || confidence < 0.25) return null;
     return buildSignal({
       tick, fixture, agent,
       type: "model-edge", outcome,
@@ -228,9 +244,9 @@ function counterflowSignals(fixture, history, agents, tick) {
     const overpr = mProb - elo[i] + nudge;
     if (overpr > maxOverprice) { maxOverprice = overpr; maxIdx = i; }
   });
-  if (maxIdx === -1 || maxOverprice < 0.008) return [];
+  if (maxIdx === -1 || maxOverprice < 0.005) return [];
 
-  const confidence = clamp(maxOverprice * 6 + 0.32, 0.32, 0.86);
+  const confidence = clamp(maxOverprice * 7 + 0.35, 0.35, 0.88);
   const target     = leastChangedOutcome(fixture, market, maxIdx);
   return [buildSignal({
     tick, fixture, agent,
