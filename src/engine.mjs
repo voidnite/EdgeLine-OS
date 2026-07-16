@@ -167,12 +167,75 @@ export class AgentEngine extends EventEmitter {
         volatility: fixture.volatility ?? (0.04 + index * 0.015),
         probabilities,
         odds: fixture.odds ?? probabilities.map(probabilityToDecimal),
-        // Ensure base values always exist (needed by strategies)
         baseHome: probabilities[0],
         baseDraw: probabilities[1],
         baseAway: probabilities[2],
       };
     });
+  }
+
+  // Generate proofs for fixtures already Final when server starts
+  // This populates the On-Chain panel immediately without waiting for new Final events
+  _generateStartupProofs() {
+    const finalFixtures = this.fixtures.filter(f => f.status === "Final");
+    if (!finalFixtures.length) return;
+
+    console.log(`[EdgeLine] Generating startup proofs for ${finalFixtures.length} finished fixtures…`);
+
+    for (const fixture of finalFixtures) {
+      try {
+        // Generate proof
+        const validation = onchainValidator.validateSettlement(fixture, []);
+        const receipt = {
+          fixtureId:       fixture.id,
+          match:           `${fixture.home} vs ${fixture.away}`,
+          finalScore:      `${fixture.homeScore}-${fixture.awayScore}`,
+          allVerified:     validation.allVerified,
+          merkleRoot:      validation.fixtureReceipt.data.merkleRoot,
+          solanaSignature: validation.fixtureReceipt.signature,
+          solscanUrl:      validation.fixtureReceipt.solscanUrl,
+          timestamp:       new Date().toISOString(),
+        };
+        if (!this.proofReceipts.find(p => p.fixtureId === fixture.id)) {
+          this.proofReceipts.unshift(receipt);
+        }
+
+        // Also add a settlement summary so Portfolio/Settlement History shows data
+        if (!this.settlements.find(s => s.fixtureId === fixture.id)) {
+          const winner = fixture.homeScore > fixture.awayScore ? fixture.home
+                       : fixture.awayScore > fixture.homeScore ? fixture.away : "Draw";
+          this.settlements.unshift({
+            fixtureId:   fixture.id,
+            match:       `${fixture.home} vs ${fixture.away}`,
+            stage:       fixture.stage ?? "World Cup",
+            finalScore:  `${fixture.homeScore}-${fixture.awayScore}`,
+            winner,
+            settledAt:   fixture.startTime ?? new Date().toISOString(),
+            positions:   0,
+            wins:        0,
+            losses:      0,
+            totalStaked: 0,
+            totalPayout: 0,
+            totalPnL:    0,
+            records:     [],
+            validation: {
+              allVerified:     validation.allVerified,
+              merkleRoot:      validation.fixtureReceipt.data.merkleRoot,
+              solanaSignature: validation.fixtureReceipt.signature,
+              solscanUrl:      validation.fixtureReceipt.solscanUrl,
+            },
+          });
+        }
+
+        console.log(`[EdgeLine] Proof: ${fixture.home} ${fixture.homeScore}-${fixture.awayScore} ${fixture.away} — ${validation.allVerified ? "✅ VERIFIED" : "❌ FAILED"}`);
+      } catch (err) {
+        console.warn(`[EdgeLine] Startup proof error for ${fixture.home} vs ${fixture.away}: ${err.message}`);
+      }
+    }
+
+    this.proofReceipts = this.proofReceipts.slice(0, 50);
+    this.settlements   = this.settlements.slice(0, 50);
+    this.emit("update", this.snapshot());
   }
 
   async start() {
@@ -188,6 +251,8 @@ export class AgentEngine extends EventEmitter {
         this._initFixtures(liveFixtures);
         this.recordHistory();
         console.log(`[EdgeLine] Loaded ${liveFixtures.length} real fixtures`);
+        // Immediately generate proofs for fixtures already Final on startup
+        this._generateStartupProofs();
       } else {
         console.warn("[EdgeLine] No fixtures returned yet — will retry on next refresh");
       }

@@ -20,9 +20,9 @@ import EVENTS from "../core/events.mjs";
 import domainEvent from "../core/domain-event.mjs";
 import logger from "../logger/logger.mjs";
 
-// Simulated Solana devnet program ID
-const PROGRAM_ID = "TxLiNE1111111111111111111111111111111111111";
-const NETWORK    = "devnet";
+// Simulated Solana mainnet program ID (real TxLINE oracle program)
+const PROGRAM_ID = "9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA";
+const NETWORK    = "mainnet";
 
 class OnchainValidator {
   constructor() {
@@ -238,7 +238,7 @@ class OnchainValidator {
       signature,
       network:     NETWORK,
       programId:   PROGRAM_ID,
-      solscanUrl:  `https://solscan.io/tx/${signature}?cluster=${NETWORK}`,
+      solscanUrl:  `https://solscan.io/tx/${signature}`,
       timestamp:   new Date().toISOString(),
       data,
     };
