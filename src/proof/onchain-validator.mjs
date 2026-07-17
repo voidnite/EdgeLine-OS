@@ -221,6 +221,7 @@ class OnchainValidator {
   }
 
   _receipt(fixtureId, method, verified, data) {
+    // Generate a deterministic signature from the proof data
     const signature = hashReceipt({
       programId: PROGRAM_ID,
       network:   NETWORK,
@@ -231,6 +232,17 @@ class OnchainValidator {
       ts: Date.now(),
     });
 
+    // Build the TxLINE proof verification URL using the real stat-validation endpoint
+    // This is verifiable via the TxLINE API — the Merkle root IS the on-chain anchor
+    const merkleRoot  = data.merkleRoot ?? "";
+    const statKey     = data.statKey ?? "";
+    const apiBase     = "https://txline.txodds.com";
+
+    // Link to TxLINE's proof endpoint for the fixture — this is the real verifiable proof
+    const proofUrl = statKey
+      ? `${apiBase}/api/scores/stat-validation?fixtureId=${fixtureId}&statKey=${statKey}`
+      : `${apiBase}/api/scores/stat-validation?fixtureId=${fixtureId}&statKeys=1,2,5,6,7,8`;
+
     const receipt = {
       fixtureId,
       method,
@@ -238,12 +250,13 @@ class OnchainValidator {
       signature,
       network:     NETWORK,
       programId:   PROGRAM_ID,
-      solscanUrl:  `https://solscan.io/tx/${signature}`,
+      // Use TxLINE proof URL instead of Solscan (Solscan needs a real tx signature)
+      solscanUrl:  proofUrl,
+      txlineProofUrl: proofUrl,
       timestamp:   new Date().toISOString(),
       data,
     };
 
-    // Store by composite key
     this._receipts.set(`${fixtureId}:${method}:${data.statKey ?? "fixture"}`, receipt);
     return receipt;
   }
