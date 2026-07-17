@@ -1079,3 +1079,25 @@ body::before {
 .proof-root-val:hover {
   background: rgba(20,184,166,.18);
 }
+
+/* ── Telegram sidebar link ───────────────────────────────────────────────── */
+.sb-telegram {
+  text-decoration: none;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 14px !important;
+}
+.sb-telegram:hover {
+  background: rgba(41,182,246,.12) !important;
+  color: #38bdf8 !important;
+}
+.sb-tg-badge {
+  background: rgba(41,182,246,.2) !important;
+  color: #38bdf8 !important;
+  font-size: 0.62rem !important;
+  animation: tg-pulse 2s ease-in-out infinite;
+}
+@keyframes tg-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
