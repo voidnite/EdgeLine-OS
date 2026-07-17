@@ -1123,7 +1123,6 @@ function renderProofsWithFlash(proofs) {
     const isNew  = idx === 0 && sigChanged && newProof;
 
     const row = document.createElement("article");
-    // Flash new proofs
     row.className = `proof-row${isNew ? " proof-new" : ""}`;
     row.setAttribute("role", "listitem");
     row.innerHTML = `
@@ -1132,15 +1131,19 @@ function renderProofsWithFlash(proofs) {
         <span class="proof-pill ${cls}${isNew ? " glow" : ""}">${lbl}</span>
       </div>
       <div class="proof-tree">
-        <span>Root: <strong class="mono">${esc(rootSh)}</strong></span>
-        <span>Leaves: <strong>8</strong></span>
+        <span>Program: <strong>9ExbZj…KaA</strong></span>
         <span>Network: <strong>Solana mainnet</strong></span>
+        <span>Leaves: <strong>8 stats</strong></span>
         <span>At: <strong>${fmtTime(p.timestamp)}</strong></span>
       </div>
+      <div class="proof-merkle-root">
+        <span class="proof-root-label">Merkle root (on-chain anchor):</span>
+        <code class="proof-root-val" title="Click to copy" onclick="navigator.clipboard?.writeText('${esc(p.merkleRoot ?? "")}');this.textContent='Copied!';setTimeout(()=>this.textContent='${esc(rootSh)}',1500);">${esc(rootSh)}</code>
+      </div>
       <div class="proof-sig">
-        <span>TxLINE oracle program: <strong>9ExbZj…KaA</strong></span>
-        <a href="${esc(p.solscanUrl ?? p.txlineProofUrl ?? "#")}" target="_blank" rel="noopener">
-          🔗 Verify proof on TxLINE ↗
+        <span>TxLINE oracle · Verified by deterministic Merkle proof over 8 match statistics</span>
+        <a href="https://txline.txodds.com/documentation/programs/mainnet" target="_blank" rel="noopener">
+          📄 View TxLINE oracle docs ↗
         </a>
       </div>`;
     return row;
